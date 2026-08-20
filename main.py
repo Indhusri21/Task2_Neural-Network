@@ -27,3 +27,47 @@ Z = (X-X_mean)/X_std
 
 W = np.random.randn(4,1) * 0.01
 B = 0.0
+
+score = np.dot(Z,W) + B
+prob_score = 1 / (1 + np.exp(-score))
+
+m = Y.shape[0]
+
+epsilon = 1e-15
+ps = np.clip(prob_score, epsilon, 1-epsilon)
+
+loss = -(1/m) * np.sum(Y * np.log(ps) + (1-Y)* np.log(1-ps))
+
+Error = ps - Y
+
+dW = 1/m * np.dot(Z.T, Error)
+dB = 1/m * np.sum(Error)
+
+learning_rate = 0.1
+W = W - learning_rate*dW
+B = B - learning_rate*dB
+
+losses =[]
+epochs = 1000
+for epoch in range(epochs):
+    score = np.dot(Z,W) + B
+    prob_score = 1 / (1 + np.exp(-score))
+
+    ps = np.clip(prob_score, epsilon, 1-epsilon)
+    loss = -(1/m) * np.sum(Y * np.log(ps) + (1-Y)* np.log(1-ps))
+
+    losses.append(loss)
+
+    Error = ps - Y
+
+    dW = 1/m * np.dot(Z.T, Error)
+    dB = 1/m * np.sum(Error)
+    W = W - learning_rate*dW
+    B = B - learning_rate*dB
+    if epoch % 100 == 0:
+        print(f"Epoch {epoch} | Loss: {loss:.4f}")
+
+y_pred = (ps>=0.5).astype(int)
+accuracy = np.mean(y_pred == Y) * 100
+print(f"\nFinal Accuracy: {accuracy:.2f}%")
+
