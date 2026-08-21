@@ -25,49 +25,75 @@ X_std = np.std(X, axis=0)
 
 Z = (X-X_mean)/X_std
 
-W = np.random.randn(4,1) * 0.01
-B = 0.0
+def relu(z):
+    return np.maximum(0, z)
 
-score = np.dot(Z,W) + B
-prob_score = 1 / (1 + np.exp(-score))
+def relu_derivative(z):
+    return (z > 0).astype(float)
+
+def sigmoid(z):
+    return 1 / (1 + np.exp(-z))
+
+W1 = np.random.randn(4, 8) * 0.01
+B1 = np.zeros((1, 8))
+W2 = np.random.randn(8, 1) * 0.01
+B2 = np.zeros((1, 1))
 
 m = Y.shape[0]
-
 epsilon = 1e-15
-ps = np.clip(prob_score, epsilon, 1-epsilon)
-
-loss = -(1/m) * np.sum(Y * np.log(ps) + (1-Y)* np.log(1-ps))
-
-Error = ps - Y
-
-dW = 1/m * np.dot(Z.T, Error)
-dB = 1/m * np.sum(Error)
-
 learning_rate = 0.1
-W = W - learning_rate*dW
-B = B - learning_rate*dB
-
 losses =[]
 epochs = 1000
+
+
 for epoch in range(epochs):
-    score = np.dot(Z,W) + B
-    prob_score = 1 / (1 + np.exp(-score))
+    Z1 = np.dot(Z, W1) + B1
+    A1 = relu(Z1)
 
-    ps = np.clip(prob_score, epsilon, 1-epsilon)
-    loss = -(1/m) * np.sum(Y * np.log(ps) + (1-Y)* np.log(1-ps))
+    Z2 = np.dot(A1, W2) + B2
+    A2 = sigmoid(Z2)
 
+    
+    ps = np.clip(A2, epsilon, 1 - epsilon)
+    loss = -(1 / m) * np.sum(Y * np.log(ps) + (1 - Y) * np.log(1 - ps))
     losses.append(loss)
 
-    Error = ps - Y
+    dZ2 = A2 - Y
+    dW2 = (1 / m) * np.dot(A1.T, dZ2)
+    dB2 = (1 / m) * np.sum(dZ2, axis=0, keepdims=True)
 
-    dW = 1/m * np.dot(Z.T, Error)
-    dB = 1/m * np.sum(Error)
-    W = W - learning_rate*dW
-    B = B - learning_rate*dB
+    dA1 = np.dot(dZ2, W2.T)
+    dZ1 = dA1 * relu_derivative(Z1)
+    dW1 = (1 / m) * np.dot(Z.T, dZ1)
+    dB1 = (1 / m) * np.sum(dZ1, axis=0, keepdims=True)
+
+    W2 = W2 - learning_rate * dW2
+    B2 = B2 - learning_rate * dB2
+    W1 = W1 - learning_rate * dW1
+    B1 = B1 - learning_rate * dB1
+
     if epoch % 100 == 0:
         print(f"Epoch {epoch} | Loss: {loss:.4f}")
 
-y_pred = (ps>=0.5).astype(int)
+plt.plot(losses)
+plt.title("Training Loss Over Epochs")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
+plt.show()
+
+y_pred = (A2 >= 0.5).astype(int)
 accuracy = np.mean(y_pred == Y) * 100
 print(f"\nFinal Accuracy: {accuracy:.2f}%")
 
+new_student = np.array([[8, 85, 75, 80]])
+new_student_scaled = (new_student - X_mean) / X_std
+
+z1_new = np.dot(new_student_scaled, W1) + B1
+a1_new = relu(z1_new)
+
+z2_new = np.dot(a1_new, W2) + B2
+a2_new = sigmoid(z2_new)
+
+prob = a2_new[0][0]
+prediction = "PASS" if prob >= 0.5 else "FAIL"
+print(f"New Student Prediction: {prediction} (Probability: {prob * 100:.2f}%)")
