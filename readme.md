@@ -1,4 +1,4 @@
-# Student Performance Classification using Neural Network (From Scratch)
+# Student Performance Classification using Neural Network
 
 A 2-layer Neural Network built completely from scratch using only NumPy to classify students into Pass or Fail categories based on synthetic academic performance metrics.
 
